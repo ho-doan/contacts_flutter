@@ -1,0 +1,4 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+  package="com.hodoan.contacts_flutter">
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
+</manifest>
