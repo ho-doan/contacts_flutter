@@ -26,4 +26,12 @@ abstract class ContactsFlutterPlatform extends PlatformInterface {
   Future<dynamic> getContacts() {
     throw UnimplementedError('getContacts() has not been implemented.');
   }
+
+  Future<bool> checkPermission() {
+    throw UnimplementedError('checkPermission() has not been implemented.');
+  }
+
+  Future<bool> requestPermission() {
+    throw UnimplementedError('requestPermission() has not been implemented.');
+  }
 }

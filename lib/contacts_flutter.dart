@@ -12,4 +12,9 @@ class ContactsFlutter {
     if (data == null) return [];
     return (data as List).map((e) => ContactModel.fromJson(e)).toList();
   }
+
+  Future<bool> checkPermission() =>
+      ContactsFlutterPlatform.instance.checkPermission();
+  Future<bool> requestPermission() =>
+      ContactsFlutterPlatform.instance.requestPermission();
 }

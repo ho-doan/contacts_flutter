@@ -12,9 +12,31 @@ public class SwiftContactsFlutterPlugin: NSObject, FlutterPlugin {
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         switch call.method{
         case "getContacts":getContacts(result)
+        case "checkPermission" : checkPermissionPlugin(result)
+        case "requestPermission" : requestPermissionPlugin(result)
         default: result(FlutterMethodNotImplemented)
         }
     }
+    
+    private func checkPermissionPlugin(_ result: @escaping FlutterResult){
+        switch CNContactStore.authorizationStatus(for: .contacts){
+        case .denied,.notDetermined,.restricted: result(false)
+        case .authorized: result(true)
+        @unknown default:
+            result(false)
+        }
+    }
+    
+    
+    private func requestPermissionPlugin(_ result: @escaping FlutterResult){
+        CNContactStore().requestAccess(for: .contacts, completionHandler: {(ok,_)->Void in if ok{
+            result(true)
+        } else {
+            result(false)
+        }
+        })
+    }
+    
     
     private func getContacts(_ result: @escaping FlutterResult){
         let contactStore = CNContactStore()

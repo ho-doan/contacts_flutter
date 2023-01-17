@@ -12,4 +12,15 @@ class MethodChannelContactsFlutter extends ContactsFlutterPlatform {
   @override
   Future<dynamic> getContacts() =>
       methodChannel.invokeMethod<dynamic>('getContacts');
+  @override
+  Future<bool> checkPermission() async {
+    final data = await methodChannel.invokeMethod<bool>('checkPermission');
+    return data ?? false;
+  }
+
+  @override
+  Future<bool> requestPermission() async {
+    final data = await methodChannel.invokeMethod<bool>('requestPermission');
+    return data ?? false;
+  }
 }

@@ -28,6 +28,7 @@ class ContactsFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
     private lateinit var context: Context
     private lateinit var activity: Activity
     private var resultReadContacts: Result? = null
+    private var resultRequestPermission: Result? = null
 
     override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
         context = flutterPluginBinding.applicationContext
@@ -38,8 +39,20 @@ class ContactsFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
     override fun onMethodCall(call: MethodCall, result: Result) {
         when (call.method) {
             "getContacts" -> getContacts(result)
+            "checkPermission" -> checkPermissionPlugin(result)
+            "requestPermission" -> requestPermissionPlugin(result)
             else -> result.notImplemented()
         }
+    }
+
+    private fun requestPermissionPlugin(result: Result) {
+        resultRequestPermission = result
+        requestPermission()
+    }
+
+    private fun checkPermissionPlugin(result: Result) {
+        val check = checkPermission()
+        result.success(check)
     }
 
     private fun getContacts(result: Result) {
@@ -120,17 +133,11 @@ class ContactsFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
         binding.addRequestPermissionsResultListener(this)
     }
 
-    override fun onDetachedFromActivityForConfigChanges() {
-        TODO("Not yet implemented")
-    }
+    override fun onDetachedFromActivityForConfigChanges() {}
 
-    override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
-        TODO("Not yet implemented")
-    }
+    override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {}
 
-    override fun onDetachedFromActivity() {
-        TODO("Not yet implemented")
-    }
+    override fun onDetachedFromActivity() {}
 
     override fun onRequestPermissionsResult(
         requestCode: Int,
@@ -144,11 +151,16 @@ class ContactsFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
         when (requestCode) {
             99 -> {
                 if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    val contacts = readContacts()
-                    resultReadContacts?.success(contacts)
+                    resultRequestPermission?.success(true)
+                    resultReadContacts?.let {
+                        val contacts = readContacts()
+                        it.success(contacts)
+                    }
                 } else {
-                    resultReadContacts = null
+                    resultRequestPermission?.success(false)
                 }
+                resultReadContacts = null
+                resultRequestPermission = null
             }
         }
         return true
