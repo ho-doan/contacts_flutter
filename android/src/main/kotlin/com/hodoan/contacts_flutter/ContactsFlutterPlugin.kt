@@ -11,6 +11,7 @@ import android.provider.ContactsContract.CommonDataKinds.Phone
 import android.provider.ContactsContract.Contacts
 import android.util.Log
 import androidx.core.app.ActivityCompat
+import com.hodoan.contacts_flutter.ProtobufModel
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
@@ -20,6 +21,8 @@ import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
 import io.flutter.plugin.common.PluginRegistry
 import java.util.*
+
+import com.hodoan.contacts_flutter.ProtobufModel as pb
 
 /** ContactsFlutterPlugin */
 class ContactsFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
@@ -62,16 +65,16 @@ class ContactsFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
             return
         }
         val contacts = readContacts()
-        result.success(contacts)
+        result.success(contacts?.toByteArray())
     }
 
     @SuppressLint("Recycle")
-    private fun readContacts(): MutableList<Map<String, String>>? {
+    private fun readContacts(): pb.ContactListModel? {
         val properties = arrayOf(
             Phone.NUMBER,
             Contacts.DISPLAY_NAME,
         )
-        val contacts = mutableListOf<Map<String, String>>()
+        val cts = mutableListOf<pb.ContactModel>()
         val contentResolver = context.contentResolver
         val cursor =
             contentResolver.query(
@@ -82,23 +85,36 @@ class ContactsFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
                 Phone.DISPLAY_NAME + " ASC"
             )
         cursor ?: return null
-        if (cursor.count < 1) return null
+        if (cursor.count < 1) {
+            cursor.close()
+            return null
+        }
 
         val nameIndex = cursor.getColumnIndex(Contacts.DISPLAY_NAME)
         val numberIndex = cursor.getColumnIndex(Phone.NUMBER)
 
         while (cursor.moveToNext()) {
+            val name = cursor.getString(nameIndex)
             val number = cursor.getString(numberIndex).replace(" ", "")
-            if (!contacts.any { it["number"] == number }) {
-                contacts.add(
-                    mapOf(
-                        "name" to cursor.getString(nameIndex),
-                        "number" to number
-                    )
-                )
-            }
+//            if (!cts.any { it.phonesList.contains(number) }) {
+                if (cts.firstOrNull { it.name == name } != null) {
+                    val index = cts.indexOfFirst { it.name == name }
+                    val phones = cts[index].phonesList
+                    cts[index] = pb.ContactModel.newBuilder()
+                        .setName(name)
+                        .addAllPhones(phones + number)
+                        .build()
+                } else {
+                    cts += pb.ContactModel.newBuilder()
+                        .setName(name)
+                        .addAllPhones(listOf(number))
+                        .build()
+                }
+//            }
         }
-        return contacts
+        cursor.close()
+        return pb.ContactListModel.newBuilder().addAllContacts(cts).build()
+//        return contacts
     }
 
     private fun checkPermission(): Boolean {
@@ -154,7 +170,7 @@ class ContactsFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
                     resultRequestPermission?.success(true)
                     resultReadContacts?.let {
                         val contacts = readContacts()
-                        it.success(contacts)
+                        it.success(contacts?.toByteArray())
                     }
                 } else {
                     resultRequestPermission?.success(false)

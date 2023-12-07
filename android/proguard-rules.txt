@@ -1,0 +1,1 @@
+-keep class com.hodoan.contacts_flutter.** { *; }

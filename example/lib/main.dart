@@ -34,7 +34,7 @@ class _MyAppState extends State<MyApp> {
                       ),
                     ),
                     child: Text(
-                      'name: ${contact.name}\n phone: ${contact.phone}',
+                      'name: ${contact.name}\n phone: ${contact.phones.join(',')}',
                       style: const TextStyle(
                         fontSize: 12,
                         color: Colors.black,

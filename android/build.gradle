@@ -11,6 +11,7 @@ buildscript {
     dependencies {
         classpath 'com.android.tools.build:gradle:7.1.2'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        classpath 'com.google.protobuf:protobuf-gradle-plugin:0.8.17'
     }
 }
 
@@ -23,6 +24,23 @@ allprojects {
 
 apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
+apply plugin: 'com.google.protobuf'
+
+protobuf {
+    protoc {
+        artifact = 'com.google.protobuf:protoc:3.18.1'
+    }
+
+    generateProtoTasks {
+        all().each { task ->
+            task.builtins {
+                java {
+                    option "lite"
+                }
+            }
+        }
+    }
+}
 
 android {
     compileSdkVersion 31
@@ -38,9 +56,19 @@ android {
 
     sourceSets {
         main.java.srcDirs += 'src/main/kotlin'
+        main {
+            proto {
+                srcDir '../protos/'
+            }
+        }
     }
 
     defaultConfig {
         minSdkVersion 16
+        consumerProguardFiles 'proguard-rules.txt'
     }
+}
+
+dependencies {
+    implementation 'com.google.protobuf:protobuf-javalite:3.18.1'
 }

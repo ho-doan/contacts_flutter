@@ -1,0 +1,11 @@
+syntax = "proto3";
+option java_package = "com.hodoan.contacts_flutter";
+option java_outer_classname = "ProtobufModel";
+
+message ContactModel{
+    string name = 1;
+    repeated string phones = 2;
+}
+message ContactListModel{
+    repeated ContactModel contacts = 1;
+}
