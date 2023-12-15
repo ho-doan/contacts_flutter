@@ -9,7 +9,6 @@ class ContactsFlutter {
   static final instance = ContactsFlutter._();
   Future<List<pb.ContactModel>> getContacts() async {
     final data = await ContactsFlutterPlatform.instance.getContacts();
-    print(data);
     if (data == null) return [];
     final result = pb.ContactListModel.fromBuffer(data);
     return result.contacts;

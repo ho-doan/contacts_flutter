@@ -11,7 +11,6 @@ import android.provider.ContactsContract.CommonDataKinds.Phone
 import android.provider.ContactsContract.Contacts
 import android.util.Log
 import androidx.core.app.ActivityCompat
-import com.hodoan.contacts_flutter.ProtobufModel
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
@@ -21,21 +20,21 @@ import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
 import io.flutter.plugin.common.PluginRegistry
 import java.util.*
-
 import com.hodoan.contacts_flutter.ProtobufModel as pb
 
 /** ContactsFlutterPlugin */
 class ContactsFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
     PluginRegistry.RequestPermissionsResultListener {
     private lateinit var channel: MethodChannel
+    private lateinit var channelPerResult: MethodChannel
     private lateinit var context: Context
     private lateinit var activity: Activity
-    private var resultReadContacts: Result? = null
-    private var resultRequestPermission: Result? = null
 
     override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
         context = flutterPluginBinding.applicationContext
         channel = MethodChannel(flutterPluginBinding.binaryMessenger, "contacts_flutter")
+        channelPerResult =
+            MethodChannel(flutterPluginBinding.binaryMessenger, "contacts_flutter/per")
         channel.setMethodCallHandler(this)
     }
 
@@ -49,8 +48,8 @@ class ContactsFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
     }
 
     private fun requestPermissionPlugin(result: Result) {
-        resultRequestPermission = result
         requestPermission()
+        result.success(null)
     }
 
     private fun checkPermissionPlugin(result: Result) {
@@ -60,7 +59,6 @@ class ContactsFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
 
     private fun getContacts(result: Result) {
         if (!checkPermission()) {
-            resultReadContacts = result
             requestPermission()
             return
         }
@@ -74,7 +72,7 @@ class ContactsFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
             Phone.NUMBER,
             Contacts.DISPLAY_NAME,
         )
-        val cts = mutableListOf<pb.ContactModel>()
+        val cts = mutableListOf<pb.ContactModel.Builder>()
         val contentResolver = context.contentResolver
         val cursor =
             contentResolver.query(
@@ -96,25 +94,19 @@ class ContactsFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
         while (cursor.moveToNext()) {
             val name = cursor.getString(nameIndex)
             val number = cursor.getString(numberIndex).replace(" ", "")
-//            if (!cts.any { it.phonesList.contains(number) }) {
-                if (cts.firstOrNull { it.name == name } != null) {
-                    val index = cts.indexOfFirst { it.name == name }
-                    val phones = cts[index].phonesList
-                    cts[index] = pb.ContactModel.newBuilder()
-                        .setName(name)
-                        .addAllPhones(phones + number)
-                        .build()
-                } else {
-                    cts += pb.ContactModel.newBuilder()
-                        .setName(name)
-                        .addAllPhones(listOf(number))
-                        .build()
-                }
-//            }
+            val check = cts.firstOrNull { it.name == name }
+            if (check != null) {
+                val index = cts.indexOfFirst { it.name == name }
+                cts[index]
+                    .addPhones(number)
+            } else {
+                cts += pb.ContactModel.newBuilder()
+                    .setName(name)
+                    .addAllPhones(listOf(number))
+            }
         }
         cursor.close()
-        return pb.ContactListModel.newBuilder().addAllContacts(cts).build()
-//        return contacts
+        return pb.ContactListModel.newBuilder().addAllContacts(cts.map { it.build() }).build()
     }
 
     private fun checkPermission(): Boolean {
@@ -164,19 +156,14 @@ class ContactsFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
             ContactsFlutterPlugin::class.simpleName,
             "onRequestPermissionsResult: $requestCode,${grantResults[0]}"
         )
+        // android.os.Handler(Looper.getMainLooper()).post { sink?.success(value.toByteArray()) }
         when (requestCode) {
             99 -> {
                 if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    resultRequestPermission?.success(true)
-                    resultReadContacts?.let {
-                        val contacts = readContacts()
-                        it.success(contacts?.toByteArray())
-                    }
+                    channelPerResult.invokeMethod("permissionResult", true)
                 } else {
-                    resultRequestPermission?.success(false)
+                    channelPerResult.invokeMethod("permissionResult", false)
                 }
-                resultReadContacts = null
-                resultRequestPermission = null
             }
         }
         return true

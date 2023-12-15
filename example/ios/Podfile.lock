@@ -1,11 +1,20 @@
 PODS:
   - contacts_flutter (0.0.1):
     - Flutter
+    - Protobuf (~> 3.5)
+    - SwiftProtobuf (~> 1.0)
   - Flutter (1.0.0)
+  - Protobuf (3.25.1)
+  - SwiftProtobuf (1.25.1)
 
 DEPENDENCIES:
   - contacts_flutter (from `.symlinks/plugins/contacts_flutter/ios`)
   - Flutter (from `Flutter`)
+
+SPEC REPOS:
+  trunk:
+    - Protobuf
+    - SwiftProtobuf
 
 EXTERNAL SOURCES:
   contacts_flutter:
@@ -14,9 +23,11 @@ EXTERNAL SOURCES:
     :path: Flutter
 
 SPEC CHECKSUMS:
-  contacts_flutter: 4a4fd487c085618a8afd79aa0ed8201c40a61e33
+  contacts_flutter: d9c2d6ba501f54198e07c0bca0dc28d0aece1abb
   Flutter: f04841e97a9d0b0a8025694d0796dd46242b2854
+  Protobuf: d94761c33f1239c0a43a0817ca1a5f7f7c900241
+  SwiftProtobuf: 69f02cd54fb03201c5e6bf8b76f687c5ef7541a3
 
 PODFILE CHECKSUM: ef19549a9bc3046e7bb7d2fab4d021637c0c58a3
 
-COCOAPODS: 1.11.3
+COCOAPODS: 1.13.0
